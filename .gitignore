@@ -40,3 +40,5 @@ tmp-next-start*.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel

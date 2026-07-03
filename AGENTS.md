@@ -52,9 +52,11 @@ Directory handles are optional browser permissions and must be re-requested if a
 
 ## Product and Design Direction
 
-The interface should feel like an original local-first governance console: calm, premium, operational, dense but readable, and GitHub-portfolio ready. Use near-white or light stone backgrounds, cool gray panels, deep charcoal text, subtle slate borders, one restrained mature accent, Geist, and Geist Mono.
+The interface should feel like an original local-first governance console: calm, premium, operational, dense but readable, and GitHub-portfolio ready. Use a high-contrast editorial-tech command-center direction with dark focal surfaces, near-white supporting space, cool gray panels, deep charcoal text, subtle slate borders, one restrained mature accent, Geist, and Geist Mono.
 
 Do not use warm ivory, beige, amber-gold, brownish gold, yellow primary accents, neon color, or washed-out low-contrast sections.
+
+Avoid generic admin-template composition. Preserve a memorable first-screen command surface, layered modules, and strong hierarchy.
 
 Do not clone provided reference images. They are moodboard-level inspiration for tone, density, and information hierarchy only.
 

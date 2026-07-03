@@ -5,13 +5,13 @@
 
 ## Aesthetic Direction
 
-Original local-first governance console: premium, operational, calm, sharper than a generic admin dashboard, with a clean technical feel.
+Original editorial-tech governance console: premium, operational, high-contrast, composed, and visibly product-designed rather than admin-template.
 
 ## Dials
 
-- DESIGN_VARIANCE: 6 / 10
+- DESIGN_VARIANCE: 7 / 10
 - MOTION_INTENSITY: 3 / 10
-- VISUAL_DENSITY: 6 / 10
+- VISUAL_DENSITY: 7 / 10
 
 ## Type Stack
 
@@ -27,9 +27,9 @@ Banned: Inter, Roboto, Arial, system-ui as primary UI fonts, serif dashboard typ
 
 Core colors use OKLCH cool neutrals:
 
-- Background: near-white/light stone
-- Surface: crisp near-white
-- Panel: cool gray
+- Background: near-white with subtle technical grid and cool radial depth
+- Surface: crisp near-white glass/elevated panels
+- Panel: dark command surfaces plus cool gray supporting panels
 - Foreground: charcoal
 - Accent: restrained slate-blue
 - Success: muted emerald
@@ -40,9 +40,10 @@ Banned: pure black, pure white, beige/ivory private-banking palettes, amber/gold
 
 ## Layout
 
-- Shell: sidebar on desktop, top-stacked on mobile.
-- Container: full dashboard surface with responsive padding.
-- Cards: single-level only; no cards inside cards.
+- Shell: compact dark command rail with icon navigation.
+- First screen: dark command-center panel with integrated metrics and project brief cockpit.
+- Container: max-width operational canvas with responsive padding.
+- Cards: layered elevated panels, single nesting level only.
 - Data tables: horizontal overflow allowed only inside table container.
 - Touch targets: 44px minimum.
 
@@ -59,6 +60,9 @@ Banned: pure black, pure white, beige/ivory private-banking palettes, amber/gold
 - Custom shadcn-compatible `Input`
 - Custom shadcn-compatible `Card`
 - `SkillOpsDashboard`
+- Dark command rail
+- Command-center hero panel
+- Project brief cockpit panel
 - Recharts coverage chart
 
 ## Copy Rules
@@ -71,3 +75,4 @@ Banned: pure black, pure white, beige/ivory private-banking palettes, amber/gold
 
 2026-07-03 by initial SkillOps OS implementation.
 2026-07-03 by cool-neutral governance-console redesign.
+2026-07-03 by editorial-tech command-center redesign.

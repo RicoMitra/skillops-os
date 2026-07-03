@@ -48,3 +48,10 @@
 - **Decision:** Use a sharper cool-neutral governance-console palette with deep charcoal text, cool gray panels, slate borders, and one restrained slate-blue accent.
 - **Rationale:** The previous beige/gold direction felt too private-banking and not technical enough for SkillOps governance.
 - **Consequence:** Avoid beige, warm ivory, amber-gold, brownish gold, yellow accents, neon styling, and washed-out low-contrast sections.
+
+## D-008: Editorial-Tech Command Center Composition
+
+- **Status:** Accepted
+- **Decision:** Use a dark command-center first screen, compact command rail, layered elevated panels, and cockpit-style project brief composition.
+- **Rationale:** A simple admin-template layout did not communicate the premium governance product quality intended for the portfolio.
+- **Consequence:** Future UI changes should preserve the stronger first-screen hierarchy and avoid returning to generic card grids with a plain headline block.
