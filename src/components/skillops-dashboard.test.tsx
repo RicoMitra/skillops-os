@@ -12,6 +12,15 @@ description: Use this skill whenever the user asks to build, create, design, red
 Use for building React dashboards with Tailwind, accessibility, layout, components, and production UI flows.
 `;
 
+const polishSkillFile = `---
+name: emil-design-eng
+description: Use after the functional UI exists. Polish spacing, typography, animation, transitions, hierarchy, and interaction details.
+---
+
+# Emil Design Eng
+Use for UI polish after build work is complete.
+`;
+
 describe("SkillOpsDashboard", () => {
   it("imports session SKILL.md files, generates sequence, warnings, and exports", async () => {
     const user = userEvent.setup();
@@ -27,11 +36,15 @@ describe("SkillOpsDashboard", () => {
     expect(screen.getByText(/No login, no cloud sync, no LLM calls/i)).toBeInTheDocument();
 
     const file = new File([sampleSkillFile], "SKILL.md", { type: "text/markdown" });
-    await user.upload(screen.getByLabelText(/Upload SKILL.md files/i), file);
+    const secondFile = new File([polishSkillFile], "SKILL.md", { type: "text/markdown" });
+    await user.upload(screen.getByLabelText(/Upload SKILL.md files/i), [file, secondFile]);
 
     expect(await screen.findByText("frontend-god-mode")).toBeInTheDocument();
+    expect(await screen.findByText("emil-design-eng")).toBeInTheDocument();
     expect(screen.getAllByText("Build").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("UI polish").length).toBeGreaterThan(0);
     expect(screen.getByText(/Recommended sequence/i)).toBeInTheDocument();
+    expect(screen.getByText(/body: build\/create\/frontend keywords/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Export Codex prompt/i }));
     await user.click(screen.getByRole("button", { name: /Export Obsidian note/i }));

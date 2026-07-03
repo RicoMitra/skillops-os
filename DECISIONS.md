@@ -55,3 +55,17 @@
 - **Decision:** Use a dark command-center first screen, compact command rail, layered elevated panels, and cockpit-style project brief composition.
 - **Rationale:** A simple admin-template layout did not communicate the premium governance product quality intended for the portfolio.
 - **Consequence:** Future UI changes should preserve the stronger first-screen hierarchy and avoid returning to generic card grids with a plain headline block.
+
+## D-009: Full-Product Dark Governance Console
+
+- **Status:** Accepted
+- **Decision:** Extend the dark layered governance-console language across sidebar, library, sequence, warnings, coverage, exports, empty states, buttons, inputs, chips, and tables.
+- **Rationale:** A premium hero attached to default light cards felt template-like and did not meet the product quality target.
+- **Consequence:** Future UI changes should keep one coherent dark visual system with high contrast, precise borders, layered panels, and restrained slate-blue accent usage.
+
+## D-010: Multi-File SKILL.md Import and Merge
+
+- **Status:** Accepted
+- **Decision:** Directory Picker recursively imports all `SKILL.md` files and upload fallback supports multiple files that append or replace by source path rather than clearing previous imports.
+- **Rationale:** Real users store skills as separate folders/files, not one combined `SKILL.md`.
+- **Consequence:** The library must show source path, detected name, phase, category, risk, confidence, and evidence for each imported skill.

@@ -5,7 +5,7 @@
 
 ## Aesthetic Direction
 
-Original editorial-tech governance console: premium, operational, high-contrast, composed, and visibly product-designed rather than admin-template.
+Original dark editorial-tech governance console: premium, operational, high-contrast, composed, layered, and visibly product-designed rather than admin-template. The premium language must apply to the entire app, not just the first screen.
 
 ## Dials
 
@@ -27,11 +27,11 @@ Banned: Inter, Roboto, Arial, system-ui as primary UI fonts, serif dashboard typ
 
 Core colors use OKLCH cool neutrals:
 
-- Background: near-white with subtle technical grid and cool radial depth
-- Surface: crisp near-white glass/elevated panels
-- Panel: dark command surfaces plus cool gray supporting panels
-- Foreground: charcoal
-- Accent: restrained slate-blue
+- Background: deep cool charcoal with subtle technical grid and radial depth
+- Surface: dark glass/elevated panels with precise white alpha borders
+- Panel: dark command surfaces used consistently across modules
+- Foreground: cool near-white
+- Accent: restrained slate-blue used only for primary actions and active states
 - Success: muted emerald
 - Warning: controlled orange
 - Danger: muted rose
@@ -41,7 +41,9 @@ Banned: pure black, pure white, beige/ivory private-banking palettes, amber/gold
 ## Layout
 
 - Shell: compact dark command rail with icon navigation.
-- First screen: dark command-center panel with integrated metrics and project brief cockpit.
+- First screen: dark command-center identity surface with logo, concise definition, local-first trust message, import actions, and key metrics.
+- Workflow modules: skill library, sequence, warnings, coverage, and exports below the first screen.
+- Project brief: compact workflow profile only; never a dominant hero-side form.
 - Container: max-width operational canvas with responsive padding.
 - Cards: layered elevated panels, single nesting level only.
 - Data tables: horizontal overflow allowed only inside table container.
@@ -62,7 +64,7 @@ Banned: pure black, pure white, beige/ivory private-banking palettes, amber/gold
 - `SkillOpsDashboard`
 - Dark command rail
 - Command-center hero panel
-- Project brief cockpit panel
+- Compact workflow profile panel
 - Recharts coverage chart
 
 ## Copy Rules
@@ -76,3 +78,4 @@ Banned: pure black, pure white, beige/ivory private-banking palettes, amber/gold
 2026-07-03 by initial SkillOps OS implementation.
 2026-07-03 by cool-neutral governance-console redesign.
 2026-07-03 by editorial-tech command-center redesign.
+2026-07-03 by full-product dark governance-console redesign and multi-file import revision.

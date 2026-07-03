@@ -6,8 +6,8 @@ SkillOps OS imports local skill files, classifies them with deterministic browse
 
 ## Features
 
-- Directory Picker import for local skill folders
-- Upload fallback for current-session `SKILL.md` files
+- Recursive Directory Picker import for local skill folders
+- Upload fallback for multiple current-session `SKILL.md` files
 - Browser-only parsing and classification
 - Phase-aware skill sequencing
 - Low-noise conflict and risk warnings
@@ -65,6 +65,6 @@ pnpm build
 
 This app should be deployed as its own Vercel project connected to its own GitHub repository. Do not attach it to another project repository or Vercel app.
 
-GitHub URL: pending first push.
+GitHub URL: https://github.com/RicoMitra/skillops-os
 
-Vercel URL: pending deployment.
+Vercel URL: https://skillops-os.vercel.app

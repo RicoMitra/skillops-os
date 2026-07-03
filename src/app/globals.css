@@ -1,39 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --bg: oklch(0.965 0.006 255);
-  --panel: oklch(0.925 0.008 255);
-  --surface: oklch(0.992 0.003 255);
-  --surface-warm: oklch(0.948 0.008 255);
-  --surface-elevated: oklch(0.985 0.004 255 / 0.86);
-  --paper: oklch(0.992 0.003 255);
-  --ink: oklch(0.13 0.014 255);
-  --ink-soft: oklch(0.22 0.018 255);
-  --muted: oklch(0.41 0.018 255);
-  --muted-soft: oklch(0.61 0.015 255);
-  --line: oklch(0.82 0.014 255);
-  --line-soft: oklch(0.9 0.01 255);
-  --chrome: oklch(0.17 0.025 255);
-  --chrome-2: oklch(0.22 0.03 255);
-  --chrome-line: oklch(0.42 0.045 255 / 0.45);
-  --accent: oklch(0.43 0.13 252);
-  --accent-strong: oklch(0.34 0.14 252);
+  --bg: oklch(0.145 0.024 255);
+  --panel: oklch(0.19 0.03 255);
+  --surface: oklch(0.225 0.032 255);
+  --surface-warm: oklch(0.255 0.032 255);
+  --surface-elevated: oklch(0.235 0.032 255 / 0.84);
+  --paper: oklch(0.965 0.006 255);
+  --ink: oklch(0.965 0.006 255);
+  --ink-soft: oklch(0.84 0.014 255);
+  --muted: oklch(0.72 0.018 255 / 0.76);
+  --muted-soft: oklch(0.64 0.018 255 / 0.7);
+  --line: oklch(0.72 0.03 255 / 0.2);
+  --line-soft: oklch(0.72 0.03 255 / 0.12);
+  --chrome: oklch(0.16 0.028 255);
+  --chrome-2: oklch(0.24 0.04 255);
+  --chrome-line: oklch(0.72 0.05 255 / 0.22);
+  --accent: oklch(0.57 0.14 252);
+  --accent-light: oklch(0.72 0.11 250);
+  --accent-strong: oklch(0.48 0.15 252);
   --accent-soft: oklch(0.68 0.08 252 / 0.38);
-  --accent-wash: oklch(0.91 0.03 252);
-  --success: oklch(0.46 0.12 150);
-  --success-bg: oklch(0.94 0.025 150);
-  --success-line: oklch(0.8 0.055 150);
-  --warning: oklch(0.56 0.14 55);
-  --warning-bg: oklch(0.95 0.025 55);
-  --warning-line: oklch(0.82 0.07 55);
-  --danger: oklch(0.48 0.17 22);
-  --danger-bg: oklch(0.96 0.026 22);
-  --danger-bg-strong: oklch(0.93 0.045 22);
-  --danger-soft: oklch(0.82 0.075 22);
-  --ring: oklch(0.43 0.13 252 / 0.72);
-  --shadow-tint: oklch(0.22 0.025 255 / 0.14);
-  --shadow-soft: 0 1px 0 oklch(1 0 0 / 0.95) inset, 0 24px 70px -48px oklch(0.18 0.03 255 / 0.45);
-  --shadow-strong: 0 1px 0 oklch(1 0 0 / 0.9) inset, 0 36px 90px -52px oklch(0.12 0.035 255 / 0.55);
+  --accent-wash: oklch(0.3 0.065 252 / 0.42);
+  --success: oklch(0.73 0.13 152);
+  --success-bg: oklch(0.31 0.075 152 / 0.22);
+  --success-line: oklch(0.72 0.12 152 / 0.32);
+  --warning: oklch(0.75 0.15 58);
+  --warning-bg: oklch(0.34 0.09 58 / 0.24);
+  --warning-line: oklch(0.75 0.12 58 / 0.34);
+  --danger: oklch(0.72 0.16 24);
+  --danger-bg: oklch(0.34 0.1 24 / 0.25);
+  --danger-bg-strong: oklch(0.38 0.12 24 / 0.32);
+  --danger-soft: oklch(0.72 0.14 24 / 0.36);
+  --ring: oklch(0.72 0.11 250 / 0.78);
+  --shadow-soft: 0 1px 0 rgb(255 255 255 / 0.08) inset, 0 30px 90px -56px oklch(0.02 0.02 255 / 0.95);
+  --shadow-strong: 0 1px 0 rgb(255 255 255 / 0.10) inset, 0 44px 110px -62px oklch(0.02 0.02 255 / 0.98);
 }
 
 @theme inline {
@@ -54,9 +54,9 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 8% 0%, oklch(0.92 0.035 252 / 0.75), transparent 30rem),
-    radial-gradient(circle at 92% 10%, oklch(0.9 0.018 220 / 0.5), transparent 28rem),
-    linear-gradient(180deg, oklch(0.985 0.004 255), var(--bg) 34rem);
+    radial-gradient(circle at 12% 0%, oklch(0.38 0.12 252 / 0.34), transparent 31rem),
+    radial-gradient(circle at 92% 10%, oklch(0.32 0.08 218 / 0.34), transparent 29rem),
+    linear-gradient(180deg, oklch(0.18 0.03 255), var(--bg) 34rem);
   color: var(--ink);
   font-family: var(--font-geist-sans), sans-serif;
 }
@@ -66,8 +66,8 @@ body::before {
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(to right, oklch(0.35 0.02 255 / 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(0.35 0.02 255 / 0.045) 1px, transparent 1px);
+    linear-gradient(to right, oklch(0.9 0.02 255 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.9 0.02 255 / 0.035) 1px, transparent 1px);
   background-size: 44px 44px;
   content: "";
   mask-image: linear-gradient(to bottom, black, transparent 72%);
@@ -80,8 +80,8 @@ input {
 }
 
 ::selection {
-  background: var(--accent-wash);
-  color: var(--ink);
+  background: var(--accent);
+  color: var(--paper);
 }
 
 ::-webkit-scrollbar {
@@ -92,7 +92,7 @@ input {
 ::-webkit-scrollbar-thumb {
   border: 2px solid var(--bg);
   border-radius: 999px;
-  background: oklch(0.72 0.018 250);
+  background: oklch(0.48 0.048 250);
 }
 
 @media (prefers-reduced-motion: reduce) {

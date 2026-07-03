@@ -23,12 +23,12 @@ No AI chat, LLM calls, accounts, cloud sync, team workspace, marketplace, remote
 
 ## Data Flow
 
-1. User selects a local skill folder with Directory Picker or uploads `SKILL.md` files for the session.
+1. User selects a local skill folder with Directory Picker or uploads one or more `SKILL.md` files for the session.
 2. Browser reads file content with explicit user permission.
 3. Parser extracts frontmatter and body signals.
 4. Classifier assigns category, phase, risk, confidence, and review state.
 5. Governance engine recommends sequence and warnings.
-6. UI presents library, sequence, coverage, and exports.
+6. UI presents library, source path, evidence, sequence, coverage, warnings, and exports.
 7. Browser downloads Codex prompt or Obsidian note.
 
 Raw uploaded skill content is not persisted. Parsed summaries and project brief may be saved locally.
