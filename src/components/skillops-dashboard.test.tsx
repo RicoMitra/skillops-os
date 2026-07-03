@@ -44,7 +44,7 @@ describe("SkillOpsDashboard", () => {
     expect(screen.getAllByText("Build").length).toBeGreaterThan(0);
     expect(screen.getAllByText("UI polish").length).toBeGreaterThan(0);
     expect(screen.getByText(/Recommended sequence/i)).toBeInTheDocument();
-    expect(screen.getByText(/body: build\/create\/frontend keywords/i)).toBeInTheDocument();
+    expect(screen.getByText(/Build selected from weighted deterministic signals/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Export Codex prompt/i }));
     await user.click(screen.getByRole("button", { name: /Export Obsidian note/i }));

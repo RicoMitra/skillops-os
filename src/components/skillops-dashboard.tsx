@@ -22,9 +22,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   analyzeSkills,
+  applyClassificationOverrides,
   buildObsidianNote,
   buildPromptExport,
   parseSkillDocument,
+  skillOverrideKey,
+  type ClassificationOverrides,
+  type GovernancePhase,
   type GovernanceReport,
   type ParsedSkill,
   type ProjectBrief,
@@ -45,6 +49,7 @@ const DEFAULT_BRIEF: ProjectBrief = {
 type StoredState = {
   brief: ProjectBrief;
   skills: ParsedSkill[];
+  overrides?: ClassificationOverrides;
 };
 
 type DirectoryHandleLike = {
@@ -110,7 +115,16 @@ function parseStoredState(raw: string | null): StoredState | null {
   try {
     const parsed = JSON.parse(raw) as StoredState;
     if (!parsed.brief || !Array.isArray(parsed.skills)) return null;
-    return parsed;
+    return {
+      ...parsed,
+      skills: parsed.skills.map((skill) => ({
+        ...skill,
+        topScoringPhases: skill.topScoringPhases ?? [],
+        extractedEvidence: skill.extractedEvidence ?? skill.detectedTriggers ?? [],
+        decisionReason: skill.decisionReason ?? "Stored summary from an earlier classifier version.",
+      })),
+      overrides: parsed.overrides ?? {},
+    };
   } catch {
     return null;
   }
@@ -122,6 +136,28 @@ function mergeSkills(existing: ParsedSkill[], incoming: ParsedSkill[]) {
   for (const skill of incoming) merged.set(`${skill.source}:${skill.path}`, skill);
   return [...merged.values()].sort((a, b) => a.path.localeCompare(b.path));
 }
+
+const PHASE_OPTIONS: Array<Exclude<GovernancePhase, "Needs review">> = [
+  "Workflow / Orchestration",
+  "Planning",
+  "Build",
+  "UI polish",
+  "QA / Review",
+  "Documentation",
+];
+
+const CATEGORY_OPTIONS = [
+  "General",
+  "Simplification / Context-saving",
+  "Ideation / Research",
+  "Frontend Engineering",
+  "Engineering",
+  "Visual Design / UX Polish",
+  "Verification",
+  "Documentation / GitHub",
+  "Agent Workflow",
+  "Governance",
+] as const;
 
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
@@ -193,6 +229,7 @@ function SkillPill({ children, tone = "default" }: { children: React.ReactNode; 
 export function SkillOpsDashboard() {
   const [brief, setBrief] = useState<ProjectBrief>(DEFAULT_BRIEF);
   const [skills, setSkills] = useState<ParsedSkill[]>([]);
+  const [overrides, setOverrides] = useState<ClassificationOverrides>({});
   const [importStatus, setImportStatus] = useState("Select a local folder or upload multiple SKILL.md files for this session.");
   const [directorySupported, setDirectorySupported] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -204,7 +241,8 @@ export function SkillOpsDashboard() {
       const saved = parseStoredState(window.localStorage.getItem(STORAGE_KEY));
       if (saved) {
         setBrief(saved.brief);
-        setSkills(saved.skills);
+        setOverrides(saved.overrides ?? {});
+        setSkills(applyClassificationOverrides(saved.skills, saved.overrides ?? {}));
       }
       setHydrated(true);
     });
@@ -214,9 +252,9 @@ export function SkillOpsDashboard() {
 
   useEffect(() => {
     if (!hydrated) return;
-    const state: StoredState = { brief, skills };
+    const state: StoredState = { brief, skills, overrides };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [brief, hydrated, skills]);
+  }, [brief, hydrated, overrides, skills]);
 
   const report: GovernanceReport = useMemo(() => analyzeSkills(skills, brief), [brief, skills]);
   const reviewCount = skills.filter((skill) => skill.needsReview).length;
@@ -228,8 +266,21 @@ export function SkillOpsDashboard() {
 
   const importFiles = async (inputs: SkillFileInput[], statusPrefix: string) => {
     const parsed = inputs.map(parseSkillDocument);
-    setSkills((current) => mergeSkills(current, parsed));
+    setSkills((current) => applyClassificationOverrides(mergeSkills(current, parsed), overrides));
     setImportStatus(`${statusPrefix}: ${parsed.length} SKILL.md file${parsed.length === 1 ? "" : "s"} parsed locally and merged into this session.`);
+  };
+
+  const updateOverride = (skill: ParsedSkill, patch: Partial<ClassificationOverrides[string]>) => {
+    const key = skillOverrideKey(skill);
+    const nextOverride = {
+      ...overrides[key],
+      phase: skill.phase === "Needs review" ? "Planning" : skill.phase,
+      category: skill.category === "Needs review" ? "General" : skill.category,
+      ...patch,
+    } satisfies ClassificationOverrides[string];
+    const nextOverrides = { ...overrides, [key]: nextOverride };
+    setOverrides(nextOverrides);
+    setSkills((current) => applyClassificationOverrides(current, nextOverrides));
   };
 
   const chooseDirectory = async () => {
@@ -274,6 +325,7 @@ export function SkillOpsDashboard() {
   const reset = () => {
     setBrief(DEFAULT_BRIEF);
     setSkills([]);
+    setOverrides({});
     setImportStatus("Local dashboard data cleared. Select a folder or upload SKILL.md files to start again.");
     window.localStorage.removeItem(STORAGE_KEY);
   };
@@ -425,7 +477,7 @@ export function SkillOpsDashboard() {
               </div>
 
               <div className="overflow-x-auto px-5 pb-5 sm:px-6">
-                <table className="w-full min-w-[1040px] text-left text-sm">
+                <table className="w-full min-w-[1180px] text-left text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-[10px] uppercase tracking-[0.16em] text-white/42">
                       <th className="py-4 pr-4 font-semibold">Source and skill</th>
@@ -445,9 +497,27 @@ export function SkillOpsDashboard() {
                           <p className="mt-2 max-w-[46ch] truncate font-mono text-xs text-white/48">{skill.path}</p>
                         </td>
                         <td className="px-4 py-4">
-                          <SkillPill tone={skill.phase === "Needs review" ? "warning" : "default"}>{skill.phase}</SkillPill>
+                          <select
+                            aria-label={`Override phase for ${skill.displayName}`}
+                            className="min-h-9 rounded-[12px] border border-white/10 bg-white/[0.06] px-2 text-xs font-semibold text-white outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                            value={skill.phase === "Needs review" ? "" : skill.phase}
+                            onChange={(event) => updateOverride(skill, { phase: event.target.value as Exclude<GovernancePhase, "Needs review"> })}
+                          >
+                            <option value="" disabled>Needs review</option>
+                            {PHASE_OPTIONS.map((phase) => <option key={phase} value={phase}>{phase}</option>)}
+                          </select>
                         </td>
-                        <td className="px-4 py-4 text-white/66">{skill.category}</td>
+                        <td className="px-4 py-4">
+                          <select
+                            aria-label={`Override category for ${skill.displayName}`}
+                            className="min-h-9 max-w-[220px] rounded-[12px] border border-white/10 bg-white/[0.06] px-2 text-xs font-semibold text-white outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                            value={skill.category === "Needs review" ? "General" : skill.category}
+                            onChange={(event) => updateOverride(skill, { category: event.target.value as ClassificationOverrides[string]["category"] })}
+                          >
+                            {CATEGORY_OPTIONS.map((category) => <option key={category} value={category}>{category}</option>)}
+                          </select>
+                          {skill.overrideApplied && <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--accent-light)]">Local override</p>}
+                        </td>
                         <td className="px-4 py-4">
                           <SkillPill tone={skill.riskLevel === "High" ? "danger" : skill.riskLevel === "Needs review" ? "warning" : "default"}>{skill.riskLevel}</SkillPill>
                         </td>
@@ -456,7 +526,9 @@ export function SkillOpsDashboard() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="max-w-[34ch] space-y-1 text-xs leading-5 text-white/52">
-                            {skill.detectedTriggers.length > 0 ? skill.detectedTriggers.map((trigger) => <p key={trigger}>{trigger}</p>) : <p>No strong trigger. Review manually.</p>}
+                            {skill.detectedTriggers.length > 0 ? skill.detectedTriggers.slice(0, 3).map((trigger) => <p key={trigger}>{trigger}</p>) : <p>No strong trigger. Review manually.</p>}
+                            {(skill.topScoringPhases ?? []).length > 0 && <p>Scores: {skill.topScoringPhases.map((item) => `${item.phase} ${item.score}`).join(", ")}</p>}
+                            <p>{skill.decisionReason}</p>
                             {skill.requiredTools.length > 0 && <p>Tools: {skill.requiredTools.join(", ")}</p>}
                           </div>
                         </td>

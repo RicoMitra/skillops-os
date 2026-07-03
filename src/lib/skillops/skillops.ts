@@ -1,5 +1,23 @@
-export type GovernancePhase = "Planning" | "Build" | "UI polish" | "QA" | "Documentation" | "Needs review";
-export type SkillCategory = "General" | "UI/UX" | "QA" | "Documentation" | "Governance" | "Needs review";
+export type GovernancePhase =
+  | "Workflow / Orchestration"
+  | "Planning"
+  | "Build"
+  | "UI polish"
+  | "QA / Review"
+  | "Documentation"
+  | "Needs review";
+export type SkillCategory =
+  | "General"
+  | "Simplification / Context-saving"
+  | "Ideation / Research"
+  | "Frontend Engineering"
+  | "Engineering"
+  | "Visual Design / UX Polish"
+  | "Verification"
+  | "Documentation / GitHub"
+  | "Agent Workflow"
+  | "Governance"
+  | "Needs review";
 export type RiskLevel = "Low" | "Medium" | "High" | "Needs review";
 export type Confidence = "High" | "Medium" | "Low";
 export type SkillSource = "codex" | "agents" | "upload" | "directory";
@@ -8,6 +26,11 @@ export type SkillFileInput = {
   path: string;
   source: SkillSource;
   content: string;
+};
+
+export type PhaseScore = {
+  phase: Exclude<GovernancePhase, "Needs review">;
+  score: number;
 };
 
 export type ParsedSkill = {
@@ -24,7 +47,19 @@ export type ParsedSkill = {
   needsReview: boolean;
   detectedTriggers: string[];
   requiredTools: string[];
+  topScoringPhases: PhaseScore[];
+  extractedEvidence: string[];
+  decisionReason: string;
+  needsReviewReason?: string;
+  overrideApplied?: boolean;
 };
+
+export type ClassificationOverride = {
+  phase: Exclude<GovernancePhase, "Needs review">;
+  category: Exclude<SkillCategory, "Needs review">;
+};
+
+export type ClassificationOverrides = Record<string, ClassificationOverride>;
 
 export type ProjectBrief = {
   projectType: string;
@@ -67,14 +102,140 @@ export type ExportPayload = {
 };
 
 const PHASE_ORDER: Record<Exclude<GovernancePhase, "Needs review">, number> = {
+  "Workflow / Orchestration": 5,
   Planning: 10,
   Build: 20,
   "UI polish": 30,
-  QA: 40,
+  "QA / Review": 40,
   Documentation: 50,
 };
 
-const PHASES: Array<Exclude<GovernancePhase, "Needs review">> = ["Planning", "Build", "UI polish", "QA", "Documentation"];
+const PHASES: Array<Exclude<GovernancePhase, "Needs review">> = [
+  "Workflow / Orchestration",
+  "Planning",
+  "Build",
+  "UI polish",
+  "QA / Review",
+  "Documentation",
+];
+
+const KEYWORDS: Record<Exclude<GovernancePhase, "Needs review">, string[]> = {
+  Planning: [
+    "brainstorm",
+    "plan",
+    "planning",
+    "scope",
+    "simplify",
+    "constraint",
+    "constraints",
+    "strategy",
+    "decide",
+    "decision",
+    "research",
+    "clarify",
+    "assumption",
+    "requirement",
+    "requirements",
+    "roadmap",
+    "mvp",
+    "caveman",
+    "context-saving",
+    "context saving",
+    "token-saving",
+    "token saving",
+    "terse",
+  ],
+  Build: [
+    "implement",
+    "implementation",
+    "code",
+    "scaffold",
+    "component",
+    "api",
+    "backend",
+    "frontend",
+    "state",
+    "architecture",
+    "feature",
+    "logic",
+    "database",
+    "integration",
+    "react",
+    "next.js",
+    "tailwind",
+  ],
+  "UI polish": [
+    "polish",
+    "visual",
+    "layout",
+    "spacing",
+    "typography",
+    "hierarchy",
+    "ux",
+    "interaction",
+    "microinteraction",
+    "micro-interaction",
+    "design system",
+    "cards",
+    "responsive polish",
+    "refinement",
+    "animation",
+    "transition",
+  ],
+  "QA / Review": [
+    "test",
+    "tests",
+    "verify",
+    "verification",
+    "browser",
+    "inspect",
+    "screenshot",
+    "accessibility",
+    "console error",
+    "console errors",
+    "responsive qa",
+    "validation",
+    "audit",
+    "check",
+    "localhost",
+  ],
+  Documentation: [
+    "readme",
+    "changelog",
+    "docs",
+    "documentation",
+    "export",
+    "markdown",
+    "obsidian",
+    "case study",
+    "commit summary",
+    "deployment notes",
+    "github",
+  ],
+  "Workflow / Orchestration": [
+    "agent",
+    "agents",
+    "workflow",
+    "sequence",
+    "orchestrate",
+    "orchestration",
+    "route",
+    "delegate",
+    "tool use",
+    "handoff",
+    "automation",
+    "governance",
+    "dispatch",
+  ],
+};
+
+const SOURCE_WEIGHTS = {
+  namePath: 8,
+  frontmatter: 8,
+  structured: 5,
+  toolsOutput: 3,
+  body: 1,
+};
 
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "skill";
@@ -96,6 +257,10 @@ function titleCase(name: string) {
     .replace(/\bQa\b/g, "QA");
 }
 
+function normalize(value: string) {
+  return value.toLowerCase().replace(/[._-]+/g, " ");
+}
+
 function parseFrontmatter(content: string) {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   const metadata: Record<string, string> = {};
@@ -104,47 +269,104 @@ function parseFrontmatter(content: string) {
   for (const line of match[1].split(/\r?\n/)) {
     const [rawKey, ...rest] = line.split(":");
     if (!rawKey || rest.length === 0) continue;
-    metadata[rawKey.trim()] = rest.join(":").trim().replace(/^["']|["']$/g, "");
+    metadata[rawKey.trim().toLowerCase()] = rest.join(":").trim().replace(/^["']|["']$/g, "");
   }
 
   return { metadata, body: content.slice(match[0].length).trim() };
 }
 
-function detectPhase(text: string): { phase: GovernancePhase; trigger: string | null } {
-  const lower = text.toLowerCase();
-  const checks: Array<[Exclude<GovernancePhase, "Needs review">, string[], string]> = [
-    ["Planning", ["planning", "brainstorm", "scope", "constraints", "spec", "requirements"], "planning/scope/spec keywords"],
-    ["Build", ["build", "create", "frontend", "react", "next.js", "tailwind", "component", "dashboard"], "build/create/frontend keywords"],
-    ["UI polish", ["polish", "emil", "typography", "spacing", "animation", "transition", "visual refinement"], "polish/typography/animation keywords"],
-    ["QA", ["browser", "screenshot", "inspect", "verify", "test", "console errors", "localhost"], "browser/verify/test keywords"],
-    ["Documentation", ["readme", "github", "obsidian", "markdown", "documentation", "docs"], "documentation/export keywords"],
-  ];
+function extractStructuredSections(body: string) {
+  const lines = body.split(/\r?\n/);
+  const wanted = /^(#{1,4}\s*)?(purpose|description|when to use|triggers?|tools?|expected output|rules?)\b/i;
+  const chunks: string[] = [];
 
-  const matches = checks
-    .map(([phase, keywords, trigger]) => ({ phase, trigger, score: keywords.filter((keyword) => lower.includes(keyword)).length }))
-    .filter((match) => match.score > 0)
-    .sort((a, b) => b.score - a.score || PHASE_ORDER[a.phase] - PHASE_ORDER[b.phase]);
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!wanted.test(lines[index].replace(/^#+\s*/, "").trim())) continue;
+    chunks.push(lines.slice(index, index + 8).join("\n"));
+  }
 
-  if (matches.length === 0) return { phase: "Needs review", trigger: null };
-  return { phase: matches[0].phase, trigger: matches[0].trigger };
+  return chunks.join("\n");
 }
 
-function detectCategory(name: string, text: string, phase: GovernancePhase): SkillCategory {
-  const lower = `${name} ${text}`.toLowerCase();
-  if (phase === "Needs review") return "Needs review";
-  if (lower.includes("frontend") || lower.includes("ui") || lower.includes("ux") || lower.includes("design")) return "UI/UX";
-  if (phase === "QA") return "QA";
-  if (phase === "Documentation") return "Documentation";
-  if (lower.includes("governance") || lower.includes("superpower") || lower.includes("ponytail") || lower.includes("caveman")) return "Governance";
-  return "General";
+function explicitPhase(value: string): Exclude<GovernancePhase, "Needs review"> | null {
+  const lower = normalize(value);
+  if (lower.includes("workflow") || lower.includes("orchestration")) return "Workflow / Orchestration";
+  if (lower.includes("planning") || lower.includes("plan")) return "Planning";
+  if (lower.includes("build") || lower.includes("implementation")) return "Build";
+  if (lower.includes("polish") || lower.includes("visual") || lower.includes("design")) return "UI polish";
+  if (lower.includes("qa") || lower.includes("review") || lower.includes("verification")) return "QA / Review";
+  if (lower.includes("documentation") || lower.includes("docs")) return "Documentation";
+  return null;
 }
 
-function detectRisk(text: string, phase: GovernancePhase, confidence: Confidence): RiskLevel {
-  if (confidence === "Low") return "Needs review";
-  const lower = text.toLowerCase();
-  if (lower.includes("must") || lower.includes("always") || lower.includes("mandatory") || lower.includes("do not")) return "High";
-  if (phase === "Build" || phase === "UI polish" || lower.includes("animation") || lower.includes("modify")) return "Medium";
-  return "Low";
+function addScores(
+  scores: Record<Exclude<GovernancePhase, "Needs review">, number>,
+  evidence: string[],
+  text: string,
+  source: keyof typeof SOURCE_WEIGHTS,
+) {
+  const lower = normalize(text);
+  if (!lower.trim()) return;
+
+  for (const [phase, keywords] of Object.entries(KEYWORDS) as Array<[Exclude<GovernancePhase, "Needs review">, string[]]>) {
+    const hits = keywords.filter((keyword) => lower.includes(keyword));
+    const uniqueHits = [...new Set(hits)];
+    if (uniqueHits.length === 0) continue;
+    const weightedHits = source === "body" ? uniqueHits.slice(0, 3) : uniqueHits;
+    scores[phase] += weightedHits.length * SOURCE_WEIGHTS[source];
+    evidence.push(`${source}: ${phase} from ${uniqueHits.slice(0, 5).join(", ")}`);
+  }
+}
+
+function scorePhases({
+  name,
+  path,
+  metadata,
+  body,
+  requiredTools,
+}: {
+  name: string;
+  path: string;
+  metadata: Record<string, string>;
+  body: string;
+  requiredTools: string[];
+}) {
+  const scores: Record<Exclude<GovernancePhase, "Needs review">, number> = {
+    "Workflow / Orchestration": 0,
+    Planning: 0,
+    Build: 0,
+    "UI polish": 0,
+    "QA / Review": 0,
+    Documentation: 0,
+  };
+  const evidence: string[] = [];
+
+  const frontmatterText = Object.entries(metadata)
+    .filter(([key]) => ["name", "description", "phase", "category", "purpose", "triggers"].includes(key))
+    .map(([key, value]) => `${key}: ${value}`)
+    .join("\n");
+  const structuredText = extractStructuredSections(body);
+  const bodyWithoutStructured = body.replace(structuredText, "");
+
+  const explicit = explicitPhase(`${metadata.phase ?? ""} ${metadata.category ?? ""}`);
+  if (explicit) {
+    scores[explicit] += 20;
+    evidence.push(`frontmatter: explicit phase/category -> ${explicit}`);
+  }
+
+  addScores(scores, evidence, `${name} ${path}`, "namePath");
+  addScores(scores, evidence, frontmatterText, "frontmatter");
+  addScores(scores, evidence, structuredText, "structured");
+  addScores(scores, evidence, `${requiredTools.join(" ")} ${structuredText}`, "toolsOutput");
+  addScores(scores, evidence, bodyWithoutStructured, "body");
+
+  return {
+    scores,
+    evidence,
+    ranked: (Object.entries(scores) as Array<[Exclude<GovernancePhase, "Needs review">, number]>)
+      .map(([phase, score]) => ({ phase, score }))
+      .sort((a, b) => b.score - a.score || PHASE_ORDER[a.phase] - PHASE_ORDER[b.phase]),
+  };
 }
 
 function detectTools(text: string) {
@@ -160,33 +382,68 @@ function detectTools(text: string) {
   return tools.filter(([needle]) => lower.includes(needle)).map(([, label]) => label);
 }
 
-function confidenceFrom(metadata: Record<string, string>, phase: GovernancePhase, description: string): Confidence {
-  let score = 0;
-  if (metadata.name) score += 2;
-  if (description.length > 30) score += 2;
-  if (phase !== "Needs review") score += 2;
-  if (/use (this )?skill|trigger|when/i.test(description)) score += 1;
-  if (!metadata.name && !metadata.description && phase === "Needs review") return "Low";
-  if (score >= 5) return "High";
-  if (score >= 3) return "Medium";
+function confidenceFrom(top: PhaseScore, second: PhaseScore | undefined, evidenceCount: number) {
+  if (top.score === 0) return "Low";
+  if (second && top.score - second.score <= 2) return "Low";
+  if (top.score >= 18 && evidenceCount >= 2) return "High";
+  if (top.score >= 8) return "Medium";
   return "Low";
+}
+
+function categoryFrom(phase: GovernancePhase, name: string, text: string): SkillCategory {
+  if (phase === "Needs review") return "Needs review";
+  const lower = normalize(`${name} ${text}`);
+
+  if (phase === "Planning") {
+    if (/(caveman|simplif|context saving|context-saving|terse|minimal)/.test(lower)) return "Simplification / Context-saving";
+    if (/(brainstorm|research|ideation|clarify|assumption|strategy)/.test(lower)) return "Ideation / Research";
+    return "Governance";
+  }
+  if (phase === "Build") {
+    if (/(frontend|react|next js|tailwind|component|ui implementation|dashboard)/.test(lower)) return "Frontend Engineering";
+    return "Engineering";
+  }
+  if (phase === "UI polish") return "Visual Design / UX Polish";
+  if (phase === "QA / Review") return "Verification";
+  if (phase === "Documentation") return "Documentation / GitHub";
+  if (phase === "Workflow / Orchestration") return "Agent Workflow";
+  return "General";
+}
+
+function detectRisk(text: string, phase: GovernancePhase, confidence: Confidence): RiskLevel {
+  if (confidence === "Low" || phase === "Needs review") return "Needs review";
+  const lower = text.toLowerCase();
+  if (lower.includes("must") || lower.includes("always") || lower.includes("mandatory") || lower.includes("do not")) return "High";
+  if (phase === "Build" || phase === "UI polish" || phase === "Workflow / Orchestration" || lower.includes("modify")) return "Medium";
+  return "Low";
+}
+
+function reviewReason(top: PhaseScore, second: PhaseScore | undefined) {
+  if (top.score === 0) return "No strong deterministic phase signal was found.";
+  if (second && top.score - second.score <= 2) {
+    return `Top phase scores are too close: ${top.phase} ${top.score}, ${second.phase} ${second.score}.`;
+  }
+  return "Classifier confidence is low.";
+}
+
+export function skillOverrideKey(skill: Pick<ParsedSkill, "source" | "path" | "name">) {
+  return `${skill.source}:${skill.path}:${skill.name}`;
 }
 
 export function parseSkillDocument(input: SkillFileInput): ParsedSkill {
   const { metadata, body } = parseFrontmatter(input.content);
   const name = slugify(metadata.name || fallbackName(input.path));
   const description = metadata.description || body.split(/\r?\n/).find((line) => line.trim().length > 20)?.trim() || "";
+  const requiredTools = detectTools(`${name}\n${description}\n${body}`);
+  const { evidence, ranked } = scorePhases({ name, path: input.path, metadata, body, requiredTools });
+  const top = ranked[0];
+  const second = ranked[1];
+  const confidence = confidenceFrom(top, second, evidence.length);
+  const phase: GovernancePhase = confidence === "Low" ? "Needs review" : top.phase;
   const analysisText = `${name}\n${description}\n${body}`;
-  const phaseHit = detectPhase(analysisText);
-  const confidence = confidenceFrom(metadata, phaseHit.phase, description);
-  const phase = confidence === "Low" ? "Needs review" : phaseHit.phase;
-  const category = detectCategory(name, analysisText, phase);
-  const triggers = [
-    metadata.description && description.toLowerCase().includes("frontend")
-      ? "description: build/create/design frontend interface"
-      : null,
-    phaseHit.trigger ? `body: ${phaseHit.trigger}` : null,
-  ].filter((item): item is string => Boolean(item));
+  const category = categoryFrom(phase, name, analysisText);
+  const needsReview = phase === "Needs review";
+  const needsReviewReason = needsReview ? reviewReason(top, second) : undefined;
 
   return {
     id: `${input.source}:${input.path}:${name}`,
@@ -199,15 +456,40 @@ export function parseSkillDocument(input: SkillFileInput): ParsedSkill {
     category,
     riskLevel: detectRisk(analysisText, phase, confidence),
     confidence,
-    needsReview: confidence === "Low",
-    detectedTriggers: triggers,
-    requiredTools: detectTools(analysisText),
+    needsReview,
+    detectedTriggers: evidence,
+    requiredTools,
+    topScoringPhases: ranked.filter((item) => item.score > 0).slice(0, 4),
+    extractedEvidence: evidence,
+    decisionReason: needsReview ? needsReviewReason ?? "Needs review." : `${top.phase} selected from weighted deterministic signals.`,
+    needsReviewReason,
   };
 }
 
+export function applyClassificationOverrides(skills: ParsedSkill[], overrides: ClassificationOverrides): ParsedSkill[] {
+  return skills.map((skill) => {
+    const override = overrides[skillOverrideKey(skill)] ?? overrides[`${skill.source}:${skill.path}`] ?? overrides[skill.name];
+    if (!override) return skill;
+    return {
+      ...skill,
+      phase: override.phase,
+      category: override.category,
+      confidence: "High",
+      needsReview: false,
+      riskLevel: detectRisk(`${skill.name}\n${skill.description}`, override.phase, "High"),
+      overrideApplied: true,
+      decisionReason: `Local override applied for ${skill.path}.`,
+      needsReviewReason: undefined,
+      extractedEvidence: [`override: ${override.phase} / ${override.category}`, ...skill.extractedEvidence.filter((item) => !item.startsWith("override:"))],
+      detectedTriggers: [`override: ${override.phase} / ${override.category}`, ...skill.detectedTriggers.filter((item) => !item.startsWith("override:"))],
+    };
+  });
+}
+
 function sequenceReason(skill: ParsedSkill, brief: ProjectBrief) {
+  if (skill.phase === "Workflow / Orchestration") return "Set up routing, handoffs, and governance before phase-specific work begins.";
   if (skill.phase === "UI polish") return "Use after core features exist for final polish and premium interaction details.";
-  if (skill.phase === "QA") return "Run after build checks pass to verify localhost, console, responsive layout, and exports.";
+  if (skill.phase === "QA / Review") return "Run after build and polish checks to verify localhost, console, responsive layout, and exports.";
   if (skill.phase === "Build") return `Build the core dashboard for ${brief.projectType}.`;
   if (skill.phase === "Documentation") return "Capture the final workflow into GitHub and Obsidian-ready documentation.";
   if (skill.phase === "Planning") return "Define scope, constraints, and the smallest safe workflow before implementation.";
@@ -278,7 +560,7 @@ export function analyzeSkills(skills: ParsedSkill[], brief: ProjectBrief): Gover
       id: `review-${skill.id}`,
       severity: "Info",
       title: "Metadata needs review",
-      trigger: `${skill.path} has low confidence metadata extraction.`,
+      trigger: `${skill.path} has low confidence metadata extraction. ${skill.needsReviewReason ?? ""}`.trim(),
       recommendedAction: "Review the skill manually before including it in an execution prompt.",
     });
   }

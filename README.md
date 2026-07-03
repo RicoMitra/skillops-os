@@ -8,10 +8,11 @@ SkillOps OS imports local skill files, classifies them with deterministic browse
 
 - Recursive Directory Picker import for local skill folders
 - Upload fallback for multiple current-session `SKILL.md` files
-- Browser-only parsing and classification
+- Browser-only weighted parsing and classification
 - Phase-aware skill sequencing
 - Low-noise conflict and risk warnings
 - Governance coverage summary
+- Local classification overrides without modifying source `SKILL.md`
 - Codex prompt export
 - Obsidian Markdown export
 - Local reset action

@@ -69,3 +69,10 @@
 - **Decision:** Directory Picker recursively imports all `SKILL.md` files and upload fallback supports multiple files that append or replace by source path rather than clearing previous imports.
 - **Rationale:** Real users store skills as separate folders/files, not one combined `SKILL.md`.
 - **Consequence:** The library must show source path, detected name, phase, category, risk, confidence, and evidence for each imported skill.
+
+## D-011: Weighted Deterministic Classifier
+
+- **Status:** Accepted
+- **Decision:** Classify skills with weighted phase scoring across name/path, frontmatter, structured sections, tools/output signals, and weak body keywords.
+- **Rationale:** Single-keyword matching misclassified general skills and let body words override stronger purpose signals.
+- **Consequence:** Results include phase, category, risk, confidence, top scores, evidence, decision reason, and `Needs review` reasons when signals are weak or conflicting.
